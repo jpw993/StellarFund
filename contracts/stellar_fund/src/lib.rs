@@ -59,6 +59,30 @@ impl AlphaFund {
         env.storage().persistent().set(&DataKey::Investors, &investors);
     }
 
+    /// Adds an investor to the fund and updates their deposit amount.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `investor`: The address of the investor to be added.
+    /// - `deposit_amount`: The amount the investor deposits into the fund.
+    ///
+    /// # Note
+    /// If the investor is already in the list, their deposit amount will be updated.
+    pub fn add_investor(env: &Env, investor: Address, deposit_amount: i128) {
+        // Check if investor is already in the list
+        let mut investors: Vec<Address> = Self::get_investors(env);
+        if !investors.contains(&investor) {
+            investors.push_back(investor.clone()); // Add investor to the Vec
+            env.storage().persistent().set(&DataKey::Investors, &investors);
+        }
+
+        // Update the investor's deposit
+        let current_deposit = env.storage().persistent()
+            .get(&DataKey::InvestorDeposit(investor.clone()))
+            .unwrap_or(0);
+        env.storage().persistent().set(&DataKey::InvestorDeposit(investor.clone()), &(current_deposit + deposit_amount));
+    }
+
     /// Closes the fund, distributing any remaining balance to investors and performance fees to traders.
     ///
     /// # Parameters
@@ -171,27 +195,5 @@ impl AlphaFund {
         env.storage().persistent().get(&DataKey::Investors).unwrap_or(vec![&env])
     }
 
-    /// Adds an investor to the fund and updates their deposit amount.
-    ///
-    /// # Parameters
-    /// - `env`: The execution environment.
-    /// - `investor`: The address of the investor to be added.
-    /// - `deposit_amount`: The amount the investor deposits into the fund.
-    ///
-    /// # Note
-    /// If the investor is already in the list, their deposit amount will be updated.
-    pub fn add_investor(env: &Env, investor: Address, deposit_amount: i128) {
-        // Check if investor is already in the list
-        let mut investors: Vec<Address> = Self::get_investors(env);
-        if !investors.contains(&investor) {
-            investors.push_back(investor.clone()); // Add investor to the Vec
-            env.storage().persistent().set(&DataKey::Investors, &investors);
-        }
 
-        // Update the investor's deposit
-        let current_deposit = env.storage().persistent()
-            .get(&DataKey::InvestorDeposit(investor.clone()))
-            .unwrap_or(0);
-        env.storage().persistent().set(&DataKey::InvestorDeposit(investor.clone()), &(current_deposit + deposit_amount));
-    }
 }
