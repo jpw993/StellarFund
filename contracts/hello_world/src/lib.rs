@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec, IntoVal, symbol_short};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec, IntoVal, symbol_short, vec};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[contracttype]
@@ -14,7 +14,8 @@ pub enum FundState {
 pub enum DataKey {
     FundState,
     Manager,
-    Trader(Address),
+    Traders,
+    Investors, // Added Investors to keep track of investor addresses
     TradingAllocation(Address),
     InvestorDeposit(Address),
     TotalDeposited,
@@ -37,8 +38,12 @@ impl AlphaFund {
         env.storage().persistent().set(&DataKey::Token, &token);
 
         // Initialize the traders list with the manager
-        let traders = Vec::from_slice(&env, &[manager.clone()]);
-        env.storage().persistent().set(&DataKey::Trader(manager.clone()), &traders);
+        let traders: Vec<Address> = vec![&env, manager.clone()];
+        env.storage().persistent().set(&DataKey::Traders, &traders);
+
+        // Initialize the investors list
+        let investors: Vec<Address> = vec![&env]; // Initialize an empty Vec for investors
+        env.storage().persistent().set(&DataKey::Investors, &investors);
     }
 
     pub fn close_fund(env: Env, manager: Address) {
@@ -100,7 +105,6 @@ impl AlphaFund {
         balance
     }
 
-
     fn transfer_tokens(env: &Env, recipient: &Address, amount: i128) {
         let token: Address = env.storage().persistent().get(&DataKey::Token).unwrap();
         let contract_id = env.current_contract_address();
@@ -112,12 +116,26 @@ impl AlphaFund {
     }
 
     fn get_traders(env: &Env) -> Vec<Address> {
-        let manager: Address = env.storage().persistent().get(&DataKey::Manager).unwrap();
-        env.storage().persistent().get(&DataKey::Trader(manager)).unwrap_or(Vec::new(&env))
+        env.storage().persistent().get(&DataKey::Traders).unwrap_or(vec![&env])
     }
 
     fn get_investors(env: &Env) -> Vec<Address> {
-        // Assuming investor addresses are tracked similarly to traders; you might need a dedicated investor list
-        Vec::new(&env)
+        env.storage().persistent().get(&DataKey::Investors).unwrap_or(vec![&env])
+    }
+
+    // Function to add an investor when they deposit
+    pub fn add_investor(env: &Env, investor: Address, deposit_amount: i128) {
+        // Check if investor is already in the list
+        let mut investors: Vec<Address> = Self::get_investors(env);
+        if !investors.contains(&investor) {
+            investors.push_back(investor.clone()); // Add investor to the Vec
+            env.storage().persistent().set(&DataKey::Investors, &investors);
+        }
+
+        // Update the investor's deposit
+        let current_deposit = env.storage().persistent()
+            .get(&DataKey::InvestorDeposit(investor.clone()))
+            .unwrap_or(0);
+        env.storage().persistent().set(&DataKey::InvestorDeposit(investor.clone()), &(current_deposit + deposit_amount));
     }
 }
