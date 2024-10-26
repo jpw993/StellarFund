@@ -1,7 +1,10 @@
 #![no_std]
+
+mod test;
+
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec, IntoVal, symbol_short, vec};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[contracttype]
 pub enum FundState {
     OpenToInvestors,
