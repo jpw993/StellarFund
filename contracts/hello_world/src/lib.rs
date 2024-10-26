@@ -52,7 +52,7 @@ impl AlphaFund {
     pub fn close_fund(env: Env, manager: Address) {
         manager.require_auth();
         let state: FundState = env.storage().persistent().get(&DataKey::FundState).unwrap_or(FundState::Closed);
-        assert!(state != FundState::Closed, "Fund is already closed");
+        assert_ne!(state, FundState::Closed, "Fund is already closed");
 
         let total_deposited: i128 = env.storage().persistent()
             .get(&DataKey::TotalDeposited)
