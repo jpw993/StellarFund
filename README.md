@@ -5,7 +5,7 @@
 
 
 ## Presentation
-
+https://www.canva.com/design/DAGUqY9IKBc/A5xx0AsaoNDVq3X8wV-Smg/view
 
 ## Walk-through video
 
@@ -37,6 +37,7 @@ Additionally, the StellarFund project aims to bring the best practices from Trad
 
 ## Testnet Deployment
 This smart contract has been deployed on Testnet:
+https://stellar.expert/explorer/testnet/contract/CDL7DFF6VFAINSH42ALGSXJ3KG4FQ4TL3UGCESUR5JA5COB3UMIJEFIC
 
 
 
