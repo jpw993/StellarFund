@@ -31,6 +31,16 @@ pub struct AlphaFund;
 
 #[contractimpl]
 impl AlphaFund {
+    /// Creates a new fund with the specified parameters.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `manager`: The address of the fund manager.
+    /// - `performance_fee_percent`: The percentage of profits taken as a performance fee (must be less than 100).
+    /// - `token`: The address of the token used for deposits and distributions.
+    ///
+    /// # Panics
+    /// Panics if `performance_fee_percent` is 100 or greater.
     pub fn create(env: Env, manager: Address, performance_fee_percent: i128, token: Address) {
         assert!(performance_fee_percent < 100, "Performance fee must be less than 100");
 
@@ -49,6 +59,14 @@ impl AlphaFund {
         env.storage().persistent().set(&DataKey::Investors, &investors);
     }
 
+    /// Closes the fund, distributing any remaining balance to investors and performance fees to traders.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `manager`: The address of the fund manager, who must authenticate the action.
+    ///
+    /// # Panics
+    /// Panics if the fund is already closed or if called by a non-manager address.
     pub fn close_fund(env: Env, manager: Address) {
         manager.require_auth();
         let state: FundState = env.storage().persistent().get(&DataKey::FundState).unwrap_or(FundState::Closed);
@@ -97,6 +115,13 @@ impl AlphaFund {
         env.storage().persistent().set(&DataKey::FundState, &FundState::Closed);
     }
 
+    /// Retrieves the current balance of the contract.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    ///
+    /// # Returns
+    /// The current balance of the contract as an `i128`.
     fn get_contract_balance(env: &Env) -> i128 {
         let token: Address = env.storage().persistent().get(&DataKey::Token).unwrap();
         let contract_id = env.current_contract_address();
@@ -108,6 +133,12 @@ impl AlphaFund {
         balance
     }
 
+    /// Transfers tokens from the contract to a specified recipient.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `recipient`: The address of the recipient.
+    /// - `amount`: The amount of tokens to transfer.
     fn transfer_tokens(env: &Env, recipient: &Address, amount: i128) {
         let token: Address = env.storage().persistent().get(&DataKey::Token).unwrap();
         let contract_id = env.current_contract_address();
@@ -118,15 +149,37 @@ impl AlphaFund {
         );
     }
 
+    /// Retrieves the list of traders from the contract's storage.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    ///
+    /// # Returns
+    /// A `Vec<Address>` containing the addresses of the traders.
     fn get_traders(env: &Env) -> Vec<Address> {
         env.storage().persistent().get(&DataKey::Traders).unwrap_or(vec![&env])
     }
 
+    /// Retrieves the list of investors from the contract's storage.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    ///
+    /// # Returns
+    /// A `Vec<Address>` containing the addresses of the investors.
     fn get_investors(env: &Env) -> Vec<Address> {
         env.storage().persistent().get(&DataKey::Investors).unwrap_or(vec![&env])
     }
 
-    // Function to add an investor when they deposit
+    /// Adds an investor to the fund and updates their deposit amount.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `investor`: The address of the investor to be added.
+    /// - `deposit_amount`: The amount the investor deposits into the fund.
+    ///
+    /// # Note
+    /// If the investor is already in the list, their deposit amount will be updated.
     pub fn add_investor(env: &Env, investor: Address, deposit_amount: i128) {
         // Check if investor is already in the list
         let mut investors: Vec<Address> = Self::get_investors(env);
