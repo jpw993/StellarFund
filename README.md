@@ -13,7 +13,11 @@ https://www.youtube.com/watch?v=NEMTYqQgGDE
 
 
 ## Short Description
-This project contains a Solidity smart contract for creating, participating in, and managing an on-chain token asset management fund.
+This project contains a Soroban smart contract for creating, participating in, and managing an on-chain token asset management fund.
+
+StellarFund enables financial inclusion by allowing anyone to benefit from managed funds (like those currently provided by Vanguard in Web2).
+This means that users in developing countries (without KYC systems) will be able to protect themselves against inflation and grow their money.
+The Soroban smart contract logic protects the investments, and guarantees that managers only receive an agreed commission and are not able to steal funds. 
 
 
 ## Full Description
