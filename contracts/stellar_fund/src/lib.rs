@@ -83,6 +83,44 @@ impl AlphaFund {
         env.storage().persistent().set(&DataKey::InvestorDeposit(investor.clone()), &(current_deposit + deposit_amount));
     }
 
+    /// Allocates a specified amount to a subordinate trader from the manager's allocation.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `subordinate`: The address of the subordinate trader receiving the allocation.
+    /// - `amt`: The amount to allocate to the subordinate.
+    ///
+    /// # Panics
+    /// Panics if the calling address is not the manager, if the allocation exceeds the manager's balance,
+    /// or if the subordinate already has an allocation.
+    pub fn allocate_to_subordinate(env: &Env, subordinate: Address, amt: i128) {
+        let manager: Address = env.storage().persistent().get(&DataKey::Manager).unwrap();
+        manager.require_auth(); // Ensure only the manager can call this function
+
+        // Get the current trading allocation for the manager
+        let current_allocation: i128 = env.storage().persistent()
+            .get(&DataKey::TradingAllocation(manager.clone()))
+            .unwrap_or(0);
+
+        // Ensure the manager has enough allocation
+        assert!(current_allocation >= amt as i128, "Cannot allocate more than you have");
+
+        // Check if the subordinate already has an allocation
+        let subordinate_allocation: i128 = env.storage().persistent()
+            .get(&DataKey::TradingAllocation(subordinate.clone()))
+            .unwrap_or(0);
+        assert_eq!(subordinate_allocation, 0, "Subordinate already has allocation");
+
+        // Update allocations
+        env.storage().persistent().set(&DataKey::TradingAllocation(manager.clone()), &(current_allocation - amt as i128));
+        env.storage().persistent().set(&DataKey::TradingAllocation(subordinate.clone()), &(subordinate_allocation + amt as i128));
+
+        // Add the subordinate to the traders list
+        let mut traders: Vec<Address> = Self::get_traders(env);
+        traders.push_back(subordinate.clone());
+        env.storage().persistent().set(&DataKey::Traders, &traders);
+    }
+
     /// Closes the fund, distributing any remaining balance to investors and performance fees to traders.
     ///
     /// # Parameters
